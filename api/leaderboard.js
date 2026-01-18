@@ -1,11 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
+// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Allow the website to read this data (CORS)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,18 +16,23 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
+  // Handle browser pre-flight checks
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
   // Get data from Supabase
-  const { data, error } = await supabase
-    .from('leaderboard')
-    .select('username, points, role')
-    .order('points', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .select('username, points, role')
+      .order('points', { ascending: false });
 
-  if (error) return res.status(500).json({ error: error.message });
+    if (error) throw error;
 
-  return res.status(200).json(data);
-}
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
